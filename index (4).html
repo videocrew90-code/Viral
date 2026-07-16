@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PostCraft — Viral post studio</title>
+<style>
+:root {
+  --bg: #0c0c0c;
+  --s1: #151515;
+  --s2: #1e1e1e;
+  --s3: #272727;
+  --border: #2a2a2a;
+  --border2: #383838;
+  --text: #eeebe6;
+  --muted: #7a7774;
+  --hint: #484644;
+  --accent: #c9935a;
+  --accent-dim: #2e1f0e;
+  --accent-text: #f0b87a;
+  --green: #5aad7e;
+  --green-dim: #142a1e;
+  --red: #d96060;
+  --red-dim: #2e1414;
+  --radius: 10px;
+  --rsm: 6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);min-height:100vh;font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.6;}
+
+/* ── App shell ── */
+.app{display:flex;min-height:100vh;}
+
+.sidebar{width:210px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.logo{padding:0 18px 20px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.logo-name{font-size:17px;font-weight:700;letter-spacing:-0.4px;}
+.logo-name span{color:var(--accent);}
+.logo-tag{font-size:11px;color:var(--muted);margin-top:1px;}
+.nav{display:flex;flex-direction:column;gap:1px;padding:0 8px;flex:1;}
+.nav-label{font-size:10px;letter-spacing:.8px;color:var(--hint);text-transform:uppercase;padding:12px 10px 4px;}
+.nb{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rsm);border:none;background:none;color:var(--muted);font-size:13.5px;cursor:pointer;text-align:left;width:100%;transition:all .15s;}
+.nb:hover{background:var(--s2);color:var(--text);}
+.nb.active{background:var(--accent-dim);color:var(--accent-text);}
+.nb-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+
+.main{flex:1;min-width:0;padding:32px 36px;max-width:860px;}
+
+/* ── Panels ── */
+.panel{display:none;}
+.panel.active{display:block;}
+.ptitle{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px;}
+.psub{color:var(--muted);font-size:13.5px;margin-bottom:26px;}
+
+/* ── Form ── */
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;letter-spacing:.2px;}
+input[type=text],input[type=password],input[type=url],textarea,select{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--rsm);color:var(--text);font-size:14px;padding:9px 12px;font-family:inherit;line-height:1.5;transition:border-color .15s;resize:vertical;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);}
+select option{background:var(--s2);}
+.field{margin-bottom:16px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--rsm);border:1px solid var(--border2);background:var(--s2);color:var(--text);font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s;font-weight:500;white-space:nowrap;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#1a0900;border-color:var(--accent);font-weight:700;}
+.btn-primary:hover{background:#dba46a;border-color:#dba46a;color:#1a0900;}
+.btn-sm{padding:6px 12px;font-size:13px;}
+.btn-ghost{background:none;border-color:transparent;color:var(--muted);}
+.btn-ghost:hover{background:var(--s2);color:var(--text);border-color:var(--border);}
+
+/* ── Step indicator ── */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:28px;}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--hint);}
+.step.active{color:var(--accent-text);}
+.step.done{color:var(--green);}
+.step-num{width:24px;height:24px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.step.done .step-num{background:var(--green-dim);border-color:var(--green);}
+.step.active .step-num{background:var(--accent-dim);border-color:var(--accent);}
+.step-line{width:32px;height:1px;background:var(--border);flex-shrink:0;}
+
+/* ── Source input area ── */
+.source-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.stab{padding:8px 16px;font-size:13.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;transition:all .15s;}
+.stab:hover{color:var(--text);}
+.stab.active{color:var(--accent-text);border-bottom-color:var(--accent);}
+
+/* ── Output / chat area ── */
+.output-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:24px;}
+
+.output-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--s2);}
+.output-header-left{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--accent-text);}
+.output-actions{display:flex;gap:6px;}
+
+/* Fingerprint strip */
+.fingerprint-strip{padding:14px 18px;border-bottom:1px solid var(--border);background:var(--accent-dim);}
+.fingerprint-label{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-weight:600;}
+.fingerprint-text{font-size:13px;color:var(--accent-text);line-height:1.6;}
+
+/* The post output */
+.post-area{padding:20px 22px;font-size:15px;line-height:1.8;white-space:pre-wrap;word-break:break-word;min-height:120px;color:var(--text);}
+
+/* Virality tips row */
+.tips-row{border-top:1px solid var(--border);padding:14px 18px;display:flex;flex-direction:column;gap:8px;}
+.tips-title{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;font-weight:600;}
+.tip-chip{display:flex;gap:8px;font-size:13px;line-height:1.5;}
+.tip-chip-dot{color:var(--accent);flex-shrink:0;margin-top:2px;}
+
+/* ── Variations ── */
+.variations-wrap{margin-top:20px;}
+.var-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.var-title{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.3px;}
+.var-grid{display:flex;flex-direction:column;gap:10px;}
+.var-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.var-card:hover{border-color:var(--border2);}
+.var-card.selected{border-color:var(--accent);}
+.var-card-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border);}
+.var-angle{font-size:13px;font-weight:600;}
+.var-fmt{font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:20px;background:var(--s3);color:var(--muted);text-transform:uppercase;}
+.var-card.selected .var-fmt{background:var(--accent-dim);color:var(--accent-text);}
+.var-body{padding:12px 14px;font-size:13.5px;line-height:1.7;white-space:pre-wrap;color:var(--muted);}
+.var-card.selected .var-body{color:var(--text);}
+.var-actions{padding:8px 14px;border-top:1px solid var(--border);display:flex;gap:6px;}
+
+/* ── Chat refinement ── */
+.chat-wrap{margin-top:24px;}
+.chat-label{font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:.2px;}
+.chat-messages{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:320px;overflow-y:auto;padding-right:4px;}
+.msg{padding:10px 14px;border-radius:var(--rsm);font-size:14px;line-height:1.6;white-space:pre-wrap;}
+.msg-user{background:var(--s3);color:var(--text);border:1px solid var(--border2);}
+.msg-ai{background:var(--s1);border:1px solid var(--border);color:var(--text);}
+.msg-ai strong{color:var(--accent-text);}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end;}
+.chat-input-row textarea{min-height:60px;resize:none;flex:1;}
+
+/* ── Compare ── */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.score-badge{display:inline-flex;align-items:baseline;gap:4px;font-size:28px;font-weight:700;color:var(--accent);}
+.score-badge small{font-size:14px;color:var(--muted);font-weight:400;}
+
+/* ── Settings / profile shared ── */
+.section-title{font-size:11px;letter-spacing:.7px;text-transform:uppercase;color:var(--hint);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);font-weight:600;}
+.settings-block{margin-bottom:28px;}
+
+/* ── Card ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
+
+/* ── Divider ── */
+hr{border:none;border-top:1px solid var(--border);margin:22px 0;}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--s3);border:1px solid var(--border2);color:var(--text);padding:9px 15px;border-radius:var(--rsm);font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;}
+#toast.show{opacity:1;}
+
+/* ── YT status ── */
+.yt-status{font-size:12.5px;color:var(--muted);margin-top:5px;}
+.hint{font-size:12px;color:var(--hint);margin-top:4px;}
+
+/* ── Platform pill selector ── */
+.platform-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.ppill{padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;}
+.ppill:hover{border-color:var(--border2);color:var(--text);}
+.ppill.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent-text);font-weight:600;}
+
+/* ── Loading states ── */
+.loading-bar{height:2px;background:linear-gradient(90deg,var(--accent-dim),var(--accent),var(--accent-dim));background-size:200%;animation:shimmer 1.2s infinite linear;border-radius:1px;margin-bottom:16px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(max-width:640px){
+  .sidebar{display:none;}
+  .main{padding:18px 14px;}
+  .field-row,.compare-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-name">Post<span>Craft</span></div>
+    <div class="logo-tag">viral post studio</div>
+  </div>
+  <div class="nav">
+    <div class="nav-label">Studio</div>
+    <button class="nb active" onclick="showPanel('create')" data-panel="create">
+      <span class="nb-icon">✦</span> Create
+    </button>
+    <button class="nb" onclick="showPanel('compare')" data-panel="compare">
+      <span class="nb-icon">⇄</span> Compare
+    </button>
+    <div class="nav-label">You</div>
+    <button class="nb" onclick="showPanel('profile')" data-panel="profile">
+      <span class="nb-icon">◉</span> Your profile
+    </button>
+    <button class="nb" onclick="showPanel('settings')" data-panel="settings">
+      <span class="nb-icon">⚙</span> Settings
+    </button>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- ════ CREATE PANEL ════ -->
+  <div id="panel-create" class="panel active">
+    <div class="ptitle">Create a viral post</div>
+    <div class="psub">Paste any content — your transcript, someone's viral post, a rough idea — and PostCraft will reverse-engineer what makes it work, then write your version of it.</div>
+
+    <!-- Steps -->
+    <div class="steps" id="step-indicator">
+      <div class="step active" id="step1"><div class="step-num">1</div> Input</div>
+      <div class="step-line"></div>
+      <div class="step" id="step2"><div class="step-num">2</div> Analyse</div>
+      <div class="step-line"></div>
+      <div class="step" id="step3"><div class="step-num">3</div> Refine</div>
+    </div>
+
+    <!-- Source type tabs -->
+    <div class="source-tabs">
+      <button class="stab active" onclick="setSourceTab('paste')" data-stab="paste">Paste content</button>
+      <button class="stab" onclick="setSourceTab('youtube')" data-stab="youtube">YouTube URL</button>
+      <button class="stab" onclick="setSourceTab('idea')" data-stab="idea">Raw idea</button>
+    </div>
+
+    <!-- Paste tab -->
+    <div id="stab-paste">
+      <div class="field">
+        <label for="src-paste">Viral post, transcript, or any content to remix</label>
+        <textarea id="src-paste" rows="7" placeholder="Paste the viral post you want to remix, your own transcript, a thread, anything. The more complete it is, the better the output."></textarea>
+      </div>
+    </div>
+
+    <!-- YouTube tab -->
+    <div id="stab-youtube" style="display:none;">
+      <div class="field">
+        <label for="src-yt">YouTube URL</label>
+        <input type="url" id="src-yt" placeholder="https://youtube.com/watch?v=…" />
+        <div class="hint">Auto-fetches captions from the video and uses them as the source.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button class="btn btn-sm" onclick="fetchYT()" id="yt-btn">Fetch captions</button>
+        <span id="yt-status" class="yt-status"></span>
+      </div>
+      <div class="field" id="yt-transcript-wrap" style="display:none;">
+        <label>Fetched transcript <span style="color:var(--green);font-size:11px;">✓ loaded</span></label>
+        <textarea id="src-yt-transcript" rows="5"></textarea>
+      </div>
+    </div>
+
+    <!-- Idea tab -->
+    <div id="stab-idea" style="display:none;">
+      <div class="field">
+        <label for="src-idea">Your rough idea or topic</label>
+        <textarea id="src-idea" rows="4" placeholder="e.g. I want to post about how I went from 0 to 10k followers in 3 months just by changing when I post…"></textarea>
+      </div>
+      <div class="hint" style="margin-bottom:16px;">PostCraft will write a viral post from scratch using your idea + a proven viral pattern it generates.</div>
+    </div>
+
+    <!-- Platform -->
+    <div class="field">
+      <label>Target platform</label>
+      <div class="platform-pills">
+        <button class="ppill active" data-plat="linkedin" onclick="setPlatform(this)">LinkedIn</button>
+        <button class="ppill" data-plat="x" onclick="setPlatform(this)">X / Twitter</button>
+        <button class="ppill" data-plat="tiktok" onclick="setPlatform(this)">TikTok</button>
+        <button class="ppill" data-plat="youtube" onclick="setPlatform(this)">YouTube</button>
+        <button class="ppill" data-plat="general" onclick="setPlatform(this)">Any</button>
+      </div>
+    </div>
+
+    <!-- Extra intent -->
+    <div class="field">
+      <label for="src-intent">What do you want this post to do? <span style="color:var(--hint);">(optional but helps)</span></label>
+      <input type="text" id="src-intent" placeholder="e.g. drive leads to my newsletter, get shares from founders, spark debate about AI…" />
+    </div>
+
+    <button class="btn btn-primary" id="create-btn" onclick="runCreate()" style="margin-bottom:8px;">
+      Analyse &amp; generate ✦
+    </button>
+
+    <!-- Loading bar (hidden by default) -->
+    <div id="loading-bar" style="display:none;"><div class="loading-bar"></div></div>
+    <div id="loading-status" style="font-size:13px;color:var(--muted);margin-bottom:12px;"></div>
+
+    <!-- ── Output ── -->
+    <div id="output-wrap" style="display:none;">
+
+      <!-- Fingerprint strip -->
+      <div class="output-wrap">
+        <div class="output-header">
+          <div class="output-header-left">🔬 Why the source works</div>
+        </div>
+        <div class="fingerprint-strip">
+          <div class="fingerprint-label">Pattern analysis</div>
+          <div class="fingerprint-text" id="out-fingerprint"></div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips-row" id="out-tips-wrap">
+          <div class="tips-title">📈 Live virality tips for your niche</div>
+          <div id="out-tips"></div>
+        </div>
+      </div>
+
+      <!-- Main post -->
+      <div class="output-wrap" style="margin-top:14px;">
+        <div class="output-header">
+          <div class="output-header-left">✦ Your viral post</div>
+          <div class="output-actions">
+            <button class="btn btn-sm btn-ghost" onclick="copyEl('out-post')">Copy</button>
+            <button class="btn btn-sm btn-ghost" onclick="regenerate()">Regenerate</button>
+          </div>
+        </div>
+        <div class="post-area" id="out-post"></div>
+      </div>
+
+      <!-- 5 variations -->
+      <div class="variations-wrap">
+        <div class="var-header">
+          <div class="var-title">5 alternative angles — click to expand &amp; use</div>
+        </div>
+        <div class="var-grid" id="out-variations"></div>
+      </div>
+
+      <!-- ── Chat refinement ── -->
+      <div class="chat-wrap">
+        <hr />
+        <div style="font-size:16px;font-weight:700;margin-bottom:3px;">Refine it</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Tell PostCraft what you want changed. Be specific — tone, length, angle, add a story, make it punchier, etc.</div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <textarea id="chat-input" placeholder="Make it shorter and punchier. Start with a question. Add a personal story about failing first. Remove the hashtags. Make it sound more casual…" rows="2" onkeydown="chatKeydown(event)"></textarea>
+          <button class="btn btn-primary btn-sm" onclick="sendChat()">Send ↑</button>
+        </div>
+        <div class="hint" style="margin-top:6px;">Press Shift+Enter for new line, Enter to send.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════ COMPARE PANEL ════ -->
+  <div id="panel-compare" class="panel">
+    <div class="ptitle">Compare &amp; improve</div>
+    <div class="psub">Paste the original viral post and your remix side by side. Get a score, specific feedback, and rewrite suggestions.</div>
+
+    <div class="compare-grid">
+      <div>
+        <label for="cmp-original">Original viral post</label>
+        <textarea id="cmp-original" rows="10" placeholder="Paste the original post here…"></textarea>
+      </div>
+      <div>
+        <label for="cmp-remix">Your version</label>
+        <textarea id="cmp-remix" rows="10" placeholder="Paste your remix or generated post here…"></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="runCompare()" id="cmp-btn">Score &amp; improve ↗</button>
+
+    <div id="cmp-output-wrap" style="display:none;margin-top:22px;">
+      <div class="output-wrap">
+        <div class="output-header">
+          <div class="output-header-left">📊 Analysis</div>
+          <div class="output-actions">
+            <button class="btn btn-sm btn-ghost" onclick="copyEl('cmp-output')">Copy</button>
+          </div>
+        </div>
+        <div class="post-area" id="cmp-output"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PROFILE PANEL ════ -->
+  <div id="panel-profile" class="panel">
+    <div class="ptitle">Your profile</div>
+    <div class="psub">This shapes every post. The more specific you are, the more it sounds like you and works for your audience.</div>
+
+    <div class="settings-block">
+      <div class="section-title">About you</div>
+      <div class="field-row">
+        <div><label for="p-name">Name</label><input type="text" id="p-name" placeholder="Alex Johnson" /></div>
+        <div><label for="p-field">Field / industry</label><input type="text" id="p-field" placeholder="B2B SaaS, fitness coaching, finance…" /></div>
+      </div>
+      <div class="field-row">
+        <div><label for="p-linkedin">LinkedIn URL</label><input type="url" id="p-linkedin" placeholder="https://linkedin.com/in/yourname" /></div>
+        <div><label for="p-x">X handle</label><input type="text" id="p-x" placeholder="@yourhandle" /></div>
+      </div>
+      <div class="field"><label for="p-bio">One-line bio</label><input type="text" id="p-bio" placeholder="I help B2B founders grow on LinkedIn without paid ads." /></div>
+      <div class="field"><label for="p-audience">Target audience</label><input type="text" id="p-audience" placeholder="Startup founders, SaaS operators, product managers" /></div>
+      <div class="field"><label for="p-topics">Topics you post about</label><input type="text" id="p-topics" placeholder="AI tools, building in public, fundraising, team management" /></div>
+      <div class="field"><label for="p-goal">Content goal</label><textarea id="p-goal" rows="2" placeholder="Build an audience of early-stage founders, attract consulting clients, grow to 10k followers in 6 months…"></textarea></div>
+    </div>
+
+    <div class="settings-block">
+      <div class="section-title">Your voice</div>
+      <div class="field"><label for="p-voice">2–3 posts you've written that sound like you</label><textarea id="p-voice" rows="8" placeholder="Paste real examples of your writing. The model learns your tone, rhythm, sentence length, and phrasing from these."></textarea></div>
+      <div class="field"><label for="p-avoid">Things to avoid</label><textarea id="p-avoid" rows="2" placeholder="No hashtags, no corporate buzzwords, no listicles, never start with 'I'…"></textarea></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProfile()">Save profile ✓</button>
+    <span id="profile-saved" style="font-size:13px;color:var(--green);margin-left:12px;display:none;">Saved!</span>
+  </div>
+
+  <!-- ════ SETTINGS PANEL ════ -->
+  <div id="panel-settings" class="panel">
+    <div class="ptitle">Settings</div>
+    <div class="psub">Everything runs in your browser — your key never leaves your device.</div>
+
+    <div class="settings-block">
+      <div class="section-title">Gemini API key</div>
+      <div class="card">
+        <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px;">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com</a>. Free tier is generous for personal use.</p>
+        <div class="field" style="margin-bottom:12px;">
+          <label for="s-key">API key</label>
+          <input type="password" id="s-key" placeholder="AIzaSy…" />
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save key</button>
+        <span id="settings-saved" style="font-size:13px;color:var(--green);margin-left:12px;display:none;">Saved!</span>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <div class="section-title">Data</div>
+      <div class="card">
+        <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px;">All data is stored locally in your browser. Nothing is sent to any server except the Gemini API.</p>
+        <button class="btn btn-sm" style="border-color:var(--red);color:var(--red);" onclick="clearAll()">Clear all local data</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let state = {
+  sourceTab: 'paste',
+  platform: 'linkedin',
+  fingerprint: '',
+  currentPost: '',
+  chatHistory: [],   // [{role, content}]
+  variations: [],
+};
+
+// ══════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════
+const S = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelector(`[data-panel="${id}"]`)?.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// SOURCE TABS
+// ══════════════════════════════════════════════
+function setSourceTab(tab) {
+  state.sourceTab = tab;
+  document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.stab === tab));
+  ['paste','youtube','idea'].forEach(t => {
+    document.getElementById('stab-' + t).style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ══════════════════════════════════════════════
+// PLATFORM
+// ══════════════════════════════════════════════
+function setPlatform(btn) {
+  state.platform = btn.dataset.plat;
+  document.querySelectorAll('.ppill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// STEPS
+// ══════════════════════════════════════════════
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step'+i);
+    el.classList.remove('active','done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  });
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, dur=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ══════════════════════════════════════════════
+// COPY
+// ══════════════════════════════════════════════
+function copyEl(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => toast('Copied!'));
+}
+
+// ══════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════
+function saveSettings() {
+  const k = document.getElementById('s-key').value.trim();
+  if (!k) { toast('Paste your API key first.'); return; }
+  S.set('gemini_key', k);
+  const el = document.getElementById('settings-saved');
+  el.style.display='inline'; setTimeout(()=>el.style.display='none',2000);
+}
+function getKey() {
+  const k = S.get('gemini_key');
+  if (!k) { toast('Add your Gemini API key in Settings first.'); showPanel('settings'); return null; }
+  return k;
+}
+function loadSettings() {
+  const k = S.get('gemini_key');
+  if (k) document.getElementById('s-key').value = k;
+}
+function clearAll() {
+  if (!confirm('Clear all local data?')) return;
+  localStorage.clear(); toast('Cleared.'); loadProfile(); loadSettings();
+}
+
+// ══════════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════════
+const PFIELDS = ['p-name','p-field','p-linkedin','p-x','p-bio','p-audience','p-topics','p-goal','p-voice','p-avoid'];
+function saveProfile() {
+  const d = {};
+  PFIELDS.forEach(id => d[id] = document.getElementById(id).value.trim());
+  S.set('profile', d);
+  const el = document.getElementById('profile-saved');
+  el.style.display='inline'; setTimeout(()=>el.style.display='none',2000);
+}
+function loadProfile() {
+  const d = S.get('profile') || {};
+  PFIELDS.forEach(id => { if(d[id]) document.getElementById(id).value = d[id]; });
+}
+function profileContext() {
+  const p = S.get('profile') || {};
+  const lines = [];
+  if(p['p-name']) lines.push(`Creator name: ${p['p-name']}`);
+  if(p['p-bio']) lines.push(`Bio: ${p['p-bio']}`);
+  if(p['p-field']) lines.push(`Field/industry: ${p['p-field']}`);
+  if(p['p-goal']) lines.push(`Content goal: ${p['p-goal']}`);
+  if(p['p-audience']) lines.push(`Target audience: ${p['p-audience']}`);
+  if(p['p-topics']) lines.push(`Topics: ${p['p-topics']}`);
+  if(p['p-avoid']) lines.push(`Avoid in posts: ${p['p-avoid']}`);
+  return lines.length ? lines.join('\n') : null;
+}
+function voiceSample() {
+  return (S.get('profile') || {})['p-voice'] || null;
+}
+
+// ══════════════════════════════════════════════
+// GEMINI
+// ══════════════════════════════════════════════
+async function gemini(prompt, useSearch=false) {
+  const key = getKey(); if(!key) throw new Error('No key');
+  const body = { contents:[{parts:[{text:prompt}]}] };
+  if(useSearch) body.tools = [{google_search:{}}];
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+  );
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data?.candidates?.[0]?.content?.parts?.filter(p=>p.text)?.map(p=>p.text)?.join('\n')?.trim() || '';
+}
+
+async function geminiChat(messages) {
+  const key = getKey(); if(!key) throw new Error('No key');
+  const contents = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts:[{text:m.content}]
+  }));
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents})}
+  );
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+}
+
+// ══════════════════════════════════════════════
+// YOUTUBE CAPTIONS
+// ══════════════════════════════════════════════
+async function fetchYT() {
+  const url = document.getElementById('src-yt').value.trim();
+  if(!url){toast('Paste a YouTube URL first.');return;}
+  const btn = document.getElementById('yt-btn');
+  const status = document.getElementById('yt-status');
+  btn.disabled=true; status.innerHTML='<span class="spinner"></span> Fetching…';
+  try {
+    const m = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+    if(!m) throw new Error('Could not parse video ID.');
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.youtube.com/watch?v='+m[1])}`;
+    const pd = await (await fetch(proxy)).json();
+    const capMatch = pd.contents.match(/"captionTracks":(\[.*?\])/);
+    if(!capMatch) throw new Error('No captions on this video.');
+    const tracks = JSON.parse(capMatch[1]);
+    const track = tracks.find(t=>t.languageCode?.startsWith('en'))||tracks[0];
+    if(!track?.baseUrl) throw new Error('No caption track URL.');
+    const cd = await (await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(track.baseUrl)}`)).json();
+    const transcript = cd.contents
+      .split(/<text[^>]*>/g).slice(1)
+      .map(c=>c.split('</text>')[0])
+      .join(' ')
+      .replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"')
+      .replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+    document.getElementById('src-yt-transcript').value = transcript;
+    document.getElementById('yt-transcript-wrap').style.display='block';
+    status.innerHTML='<span style="color:var(--green)">✓ Captions loaded</span>';
+    toast('Captions fetched!');
+  } catch(err) {
+    status.innerHTML=`<span style="color:var(--red)">✗ ${err.message} — paste manually below.</span>`;
+    document.getElementById('yt-transcript-wrap').style.display='block';
+  } finally { btn.disabled=false; }
+}
+
+// ══════════════════════════════════════════════
+// GET SOURCE TEXT
+// ══════════════════════════════════════════════
+function getSourceText() {
+  if(state.sourceTab==='paste') return document.getElementById('src-paste').value.trim();
+  if(state.sourceTab==='youtube') return document.getElementById('src-yt-transcript').value.trim();
+  if(state.sourceTab==='idea') return document.getElementById('src-idea').value.trim();
+  return '';
+}
+
+// ══════════════════════════════════════════════
+// PLATFORM GUIDANCE
+// ══════════════════════════════════════════════
+function platformGuide(p) {
+  return {
+    linkedin: 'Format for LinkedIn: professional yet human, story-driven or insight-led, 3–5 short paragraphs with line breaks, no hashtag spam, end with a thought or question that invites comments. Hook must grab in the first line before the "see more" fold.',
+    x: 'Format for X/Twitter: punchy, front-load the hook in the first tweet, under 280 chars per tweet, fine to thread if needed. No hashtag spam.',
+    tiktok: 'Write as a TikTok on-screen caption and video hook — short, high-energy, pattern-interrupt first line, conversational.',
+    youtube: 'Write as a YouTube community post or video description hook — can be a bit longer and more conversational, call to action at the end.',
+    general: 'Write clean, platform-agnostic copy that works pasted into any feed. No hashtag spam.',
+  }[p] || '';
+}
+
+// ══════════════════════════════════════════════
+// STATUS HELPERS
+// ══════════════════════════════════════════════
+function setStatus(msg) {
+  document.getElementById('loading-status').textContent = msg;
+}
+function setLoading(on) {
+  document.getElementById('loading-bar').style.display = on ? '' : 'none';
+  document.getElementById('create-btn').disabled = on;
+  document.getElementById('create-btn').textContent = on ? 'Working…' : 'Analyse & generate ✦';
+}
+
+// ══════════════════════════════════════════════
+// MAIN CREATE FLOW
+// ══════════════════════════════════════════════
+async function runCreate() {
+  const src = getSourceText();
+  if(!src){toast('Add some content first.');return;}
+  const key=getKey(); if(!key) return;
+
+  setLoading(true); setStep(2);
+  document.getElementById('output-wrap').style.display='none';
+  document.getElementById('chat-messages').innerHTML='';
+  state.chatHistory=[];
+
+  const profile = profileContext();
+  const voice = voiceSample();
+  const intent = document.getElementById('src-intent').value.trim();
+  const plat = state.platform;
+  const isIdea = state.sourceTab==='idea';
+
+  const profileBlock = profile ? `\nCREATOR CONTEXT:\n${profile}` : '';
+  const voiceBlock = voice
+    ? `\nVOICE — match this person's exact tone, rhythm, phrasing, sentence length:\n"""\n${voice}\n"""`
+    : '\nVoice: natural, confident, first-person, not corporate, no buzzwords.';
+  const intentBlock = intent ? `\nPost goal: ${intent}` : '';
+
+  try {
+    // ── Step 1: Fingerprint ──
+    setStatus('Analysing what makes this content work…');
+    const fingerprintPrompt = isIdea
+      ? `Generate a viral post pattern for this idea. Describe the ideal hook type, structure, emotional driver, pacing, and ending for a ${plat} post that would make this idea go viral. Under 100 words, plain prose.\n\nIdea: ${src}`
+      : `Analyse this content. In under 100 words, identify WHY it would perform well: the hook style, structure (list/story/before-after/controversy/tutorial etc), core emotional driver (curiosity/relatability/aspiration/humor/awe/outrage), pacing, and how it ends.\n\nContent:\n"""\n${src}\n"""\n\nPlain prose only, no headers.`;
+
+    state.fingerprint = await gemini(fingerprintPrompt);
+    document.getElementById('out-fingerprint').textContent = state.fingerprint;
+
+    // ── Step 2: Virality tips (web search) ──
+    setStatus('Fetching live virality tips for your niche…');
+    const p = S.get('profile') || {};
+    const field = p['p-field'] || 'content creation';
+    const platName = {linkedin:'LinkedIn',x:'X/Twitter',tiktok:'TikTok',youtube:'YouTube',general:'social media'}[plat]||'social media';
+    const tipsRaw = await gemini(
+      `Search for the latest proven tactics for ${platName} posts in ${field} (2024–2025). Return 4 specific, actionable tips based on real data and patterns. No fluff.\n\nReturn ONLY a JSON array, no markdown:\n[{"tip":"...","why":"..."}]`,
+      true
+    );
+    try {
+      const tips = JSON.parse(tipsRaw.replace(/```json|```/g,'').trim());
+      document.getElementById('out-tips').innerHTML = tips.map(t=>
+        `<div class="tip-chip"><span class="tip-chip-dot">→</span><div><strong style="color:var(--text);font-weight:600;">${esc(t.tip)}</strong><div style="color:var(--muted);font-size:12.5px;margin-top:1px;">${esc(t.why||'')}</div></div></div>`
+      ).join('');
+    } catch {
+      document.getElementById('out-tips').innerHTML = `<div class="tip-chip"><span class="tip-chip-dot">→</span><div>${esc(tipsRaw)}</div></div>`;
+    }
+
+    // ── Step 3: Generate main post ──
+    setStatus('Writing your viral post…');
+    const postPrompt = `You are ghostwriting a ${platName} post for a creator. Write it as if they are speaking directly to their audience — NOT describing content, NOT saying "in this video".
+
+VIRAL PATTERN TO FOLLOW:
+${state.fingerprint}
+
+${isIdea ? `CREATOR'S IDEA:\n${src}` : `ORIGINAL CONTENT TO REMIX:\n"""\n${src}\n"""`}
+${profileBlock}${voiceBlock}${intentBlock}
+
+PLATFORM: ${platformGuide(plat)}
+
+Make it genuinely viral-worthy — strong hook, pattern matches the analysis, tailored to their audience.
+
+Output ONLY the finished post. No preamble, no labels, no quotation marks.`;
+
+    state.currentPost = await gemini(postPrompt);
+    document.getElementById('out-post').textContent = state.currentPost;
+
+    // Seed chat history
+    state.chatHistory = [
+      { role:'user', content: `You are a social media ghostwriter. Here is context about the creator:\n${profileBlock}\n${voiceBlock}\n\nViral pattern:\n${state.fingerprint}\n\nPlatform: ${platName}\n${platformGuide(plat)}\n\nYou wrote this post:\n"""\n${state.currentPost}\n"""\n\nThe creator will now ask you to refine it. Always output the complete revised post at the end, clearly marked with "---REVISED POST---" on its own line.` },
+      { role:'assistant', content:`Got it — I have your post ready and I'm set to refine it. What would you like to change?` }
+    ];
+
+    // ── Step 4: 5 variations ──
+    setStatus('Generating 5 alternative angles…');
+    const varsRaw = await gemini(
+      `Generate exactly 5 alternative post ideas that use the same viral pattern but with genuinely different angles, topics, or stories.
+
+Viral pattern: ${state.fingerprint}
+${isIdea ? `Original idea: ${src}` : `Original content: ${src}`}
+${profileBlock}${voiceBlock}
+
+For each decide: text post or video script?
+
+Return ONLY valid JSON array, no markdown:
+[{"format":"text","angle":"one line","content":"full ready-to-post text"},...]`
+    );
+
+    try {
+      state.variations = JSON.parse(varsRaw.replace(/```json|```/g,'').trim());
+    } catch {
+      state.variations = [{format:'text',angle:'Alternative',content:varsRaw}];
+    }
+
+    document.getElementById('out-variations').innerHTML = state.variations.map((v,i)=>`
+      <div class="var-card" id="var-${i}" onclick="toggleVar(${i})">
+        <div class="var-card-head">
+          <span class="var-angle">${esc(v.angle||'Idea '+(i+1))}</span>
+          <span class="var-fmt">${esc(v.format||'text')}</span>
+        </div>
+        <div class="var-body" id="var-body-${i}" style="display:none;">${esc(v.content||'')}</div>
+        <div class="var-actions" id="var-actions-${i}" style="display:none;">
+          <button class="btn btn-sm" onclick="event.stopPropagation();copyVar(${i})">Copy</button>
+          <button class="btn btn-sm" onclick="event.stopPropagation();useVar(${i})">Use this one ↑</button>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('output-wrap').style.display='block';
+    setStep(3);
+    document.getElementById('output-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+    setStatus('');
+  } catch(err) {
+    toast('Error: '+err.message); setStatus('');
+  } finally { setLoading(false); }
+}
+
+// ══════════════════════════════════════════════
+// VARIATIONS
+// ══════════════════════════════════════════════
+function toggleVar(i) {
+  const card = document.getElementById('var-'+i);
+  const body = document.getElementById('var-body-'+i);
+  const actions = document.getElementById('var-actions-'+i);
+  const isOpen = body.style.display !== 'none';
+  // close all
+  state.variations.forEach((_,j)=>{
+    document.getElementById('var-body-'+j).style.display='none';
+    document.getElementById('var-actions-'+j).style.display='none';
+    document.getElementById('var-'+j).classList.remove('selected');
+  });
+  if(!isOpen){
+    body.style.display='block'; actions.style.display='flex'; card.classList.add('selected');
+  }
+}
+function copyVar(i) {
+  navigator.clipboard.writeText(state.variations[i].content).then(()=>toast('Copied!'));
+}
+function useVar(i) {
+  state.currentPost = state.variations[i].content;
+  document.getElementById('out-post').textContent = state.currentPost;
+  document.getElementById('out-post').scrollIntoView({behavior:'smooth',block:'nearest'});
+  toast('Post updated!');
+}
+
+// ══════════════════════════════════════════════
+// REGENERATE
+// ══════════════════════════════════════════════
+async function regenerate() {
+  const key=getKey(); if(!key) return;
+  const src = getSourceText();
+  const profile=profileContext(), voice=voiceSample(), intent=document.getElementById('src-intent').value.trim();
+  const platName = {linkedin:'LinkedIn',x:'X/Twitter',tiktok:'TikTok',youtube:'YouTube',general:'social media'}[state.platform]||'social media';
+  const profileBlock=profile?`\nCREATOR CONTEXT:\n${profile}`:'';
+  const voiceBlock=voice?`\nVOICE:\n"""\n${voice}\n"""`:'\nVoice: natural, confident, first-person.';
+  document.getElementById('out-post').textContent='Regenerating…';
+  try {
+    state.currentPost = await gemini(
+      `Write a different version of this ${platName} post. Use the same viral pattern but vary the hook, structure, or angle.\n\nViral pattern: ${state.fingerprint}\n\nOriginal content: ${src}\n${profileBlock}${voiceBlock}${intent?`\nGoal: ${intent}`:''}\n\n${platformGuide(state.platform)}\n\nOutput ONLY the post.`
+    );
+    document.getElementById('out-post').textContent = state.currentPost;
+    toast('Regenerated!');
+  } catch(err) { toast('Error: '+err.message); }
+}
+
+// ══════════════════════════════════════════════
+// CHAT REFINEMENT
+// ══════════════════════════════════════════════
+function chatKeydown(e) {
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  const key=getKey(); if(!key) return;
+
+  input.value='';
+  appendChatMsg('user', msg);
+  state.chatHistory.push({role:'user',content:msg});
+
+  const typingEl = appendChatMsg('assistant','…');
+  try {
+    const reply = await geminiChat(state.chatHistory);
+    state.chatHistory.push({role:'assistant',content:reply});
+
+    // Extract revised post if present
+    const revMarker = reply.indexOf('---REVISED POST---');
+    if(revMarker !== -1) {
+      const revised = reply.slice(revMarker + 18).trim();
+      state.currentPost = revised;
+      document.getElementById('out-post').textContent = revised;
+    }
+
+    typingEl.textContent = reply.replace('---REVISED POST---', '').trim();
+    document.getElementById('chat-messages').scrollTop = 9999;
+  } catch(err) {
+    typingEl.textContent='Error: '+err.message;
+  }
+}
+
+function appendChatMsg(role, text) {
+  const wrap = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}`;
+  div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop=9999;
+  return div;
+}
+
+// ══════════════════════════════════════════════
+// COMPARE
+// ══════════════════════════════════════════════
+async function runCompare() {
+  const original=document.getElementById('cmp-original').value.trim();
+  const remix=document.getElementById('cmp-remix').value.trim();
+  if(!original||!remix){toast('Paste both posts first.');return;}
+  const key=getKey(); if(!key) return;
+
+  const btn=document.getElementById('cmp-btn');
+  btn.disabled=true; btn.textContent='Scoring…';
+  const profile=profileContext();
+  try {
+    const result = await gemini(
+      `Compare these two posts. Be direct and specific.\n\nORIGINAL (viral/reference):\n"""\n${original}\n"""\n\nREMIX:\n"""\n${remix}\n"""\n\n${profile?`Creator context:\n${profile}\n\n`:''}\nGive:\n1. Score /10 for how well the remix captures what makes the original work\n2. What the remix does well (2–3 specific things)\n3. What's weaker (2–3 specific things)\n4. 3 concrete rewrite suggestions with before/after examples\n\nDirect, specific, no fluff.`
+    );
+    const out=document.getElementById('cmp-output');
+    out.textContent=result;
+    document.getElementById('cmp-output-wrap').style.display='block';
+    document.getElementById('cmp-output-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+  } catch(err){toast('Error: '+err.message);}
+  finally{btn.disabled=false;btn.textContent='Score & improve ↗';}
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+loadProfile();
+loadSettings();
+</script>
+</body>
+</html>
