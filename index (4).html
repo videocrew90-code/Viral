@@ -934,25 +934,84 @@ function appendChatMsg(role, text) {
 // ══════════════════════════════════════════════
 // COMPARE
 // ══════════════════════════════════════════════
-async function runCompare() {
-  const original=document.getElementById('cmp-original').value.trim();
-  const remix=document.getElementById('cmp-remix').value.trim();
-  if(!original||!remix){toast('Paste both posts first.');return;}
+async function runPrediction() {
+  const post = document.getElementById('pred-post').value.trim();
+  if(!post){toast('Paste your post first.');return;}
   const key=getKey(); if(!key) return;
-
-  const btn=document.getElementById('cmp-btn');
-  btn.disabled=true; btn.textContent='Scoring…';
-  const profile=profileContext();
+  const btn=document.getElementById('pred-btn');
+  btn.disabled=true; btn.textContent='Predicting…';
+  const plat = document.getElementById('pred-plat').value;
+  const size = document.getElementById('pred-account').value.trim();
+  const profile = profileContext();
   try {
     const result = await gemini(
-      `Compare these two posts. Be direct and specific.\n\nORIGINAL (viral/reference):\n"""\n${original}\n"""\n\nREMIX:\n"""\n${remix}\n"""\n\n${profile?`Creator context:\n${profile}\n\n`:''}\nGive:\n1. Score /10 for how well the remix captures what makes the original work\n2. What the remix does well (2–3 specific things)\n3. What's weaker (2–3 specific things)\n4. 3 concrete rewrite suggestions with before/after examples\n\nDirect, specific, no fluff.`
+      `You are a social media analyst. Predict the virality window for this ${plat} post.
+
+POST:
+"""
+${post}
+"""
+
+Account size: ${size || 'unknown'}
+${profile ? `Creator context:\n${profile}` : ''}
+
+Give a specific, honest prediction covering:
+1. Expected traction window — when will it start getting picked up (hours after posting)?
+2. Peak engagement window — when to expect the most activity?
+3. Decay point — when does it typically die off on ${plat}?
+4. Viral potential score /10 with honest reasoning
+5. The single biggest factor that will determine if it breaks out or stays flat
+6. One thing to do in the first 30 minutes after posting to maximise reach
+
+Be specific to the platform algorithm and the content type. No fluff.`
     );
-    const out=document.getElementById('cmp-output');
-    out.textContent=result;
-    document.getElementById('cmp-output-wrap').style.display='block';
-    document.getElementById('cmp-output-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('pred-output').textContent = result;
+    document.getElementById('pred-output-wrap').style.display = 'block';
+    document.getElementById('pred-output-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
   } catch(err){toast('Error: '+err.message);}
-  finally{btn.disabled=false;btn.textContent='Score & improve ↗';}
+  finally{btn.disabled=false; btn.textContent='Predict virality window ↗';}
+}
+
+async function runCompare() {
+  const original = document.getElementById('cmp-original').value.trim();
+  const remix = document.getElementById('cmp-remix').value.trim();
+  const stats = document.getElementById('cmp-stats').value.trim();
+  if(!original||!remix){toast('Paste both posts first.');return;}
+  const key=getKey(); if(!key) return;
+  const btn=document.getElementById('cmp-btn');
+  btn.disabled=true; btn.textContent='Analysing…';
+  const profile = profileContext();
+  try {
+    const result = await gemini(
+      `Analyse this post's real performance vs what was expected.
+
+ORIGINAL VIRAL POST (the reference):
+"""
+${original}
+"""
+
+PUBLISHED REMIX:
+"""
+${remix}
+"""
+
+${stats ? `REAL STATS (${stats})` : 'No stats provided — give structural analysis only.'}
+${profile ? `\nCreator context:\n${profile}` : ''}
+
+Give:
+1. Pattern match score /10 — how well the remix captured what made the original work
+2. Performance verdict — did it over/under-perform given the account size and platform? Why?
+3. What specifically drove or killed engagement (hook, structure, timing, topic, format)
+4. 3 concrete things to do differently on the next post — specific, not generic
+5. Whether this topic/angle is worth posting again and how to evolve it
+
+Direct, specific, actionable. No fluff.`
+    );
+    document.getElementById('cmp-output').textContent = result;
+    document.getElementById('cmp-output-wrap').style.display = 'block';
+    document.getElementById('cmp-output-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+  } catch(err){toast('Error: '+err.message);}
+  finally{btn.disabled=false; btn.textContent='Analyse performance ↗';}
 }
 
 // ══════════════════════════════════════════════
