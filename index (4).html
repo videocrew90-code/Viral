@@ -344,28 +344,68 @@ hr{border:none;border-top:1px solid var(--border);margin:22px 0;}
     </div>
   </div>
 
-  <!-- ════ COMPARE PANEL ════ -->
-  <div id="panel-compare" class="panel">
-    <div class="ptitle">Compare &amp; improve</div>
-    <div class="psub">Paste the original viral post and your remix side by side. Get a score, specific feedback, and rewrite suggestions.</div>
+ <!-- ════ COMPARE PANEL ════ -->
+<div id="panel-compare" class="panel">
+  <div class="ptitle">Performance tracker</div>
+  <div class="psub">Get a virality timeframe prediction before you post — then come back after 24–72 hours with your real stats to see how it performed.</div>
 
-    <div class="compare-grid">
+  <!-- Step A: Predict -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="section-title">Step 1 — Predict before you post</div>
+    <div class="field">
+      <label for="pred-post">Your post (paste what you're about to publish)</label>
+      <textarea id="pred-post" rows="6" placeholder="Paste your final post here…"></textarea>
+    </div>
+    <div class="field-row">
       <div>
-        <label for="cmp-original">Original viral post</label>
-        <textarea id="cmp-original" rows="10" placeholder="Paste the original post here…"></textarea>
+        <label for="pred-plat">Platform</label>
+        <select id="pred-plat">
+          <option value="linkedin">LinkedIn</option>
+          <option value="x">X / Twitter</option>
+          <option value="tiktok">TikTok</option>
+          <option value="youtube">YouTube</option>
+        </select>
       </div>
       <div>
-        <label for="cmp-remix">Your version</label>
-        <textarea id="cmp-remix" rows="10" placeholder="Paste your remix or generated post here…"></textarea>
+        <label for="pred-account">Account size (approx followers)</label>
+        <input type="text" id="pred-account" placeholder="e.g. 500, 5k, 50k" />
       </div>
     </div>
-
-    <button class="btn btn-primary" onclick="runCompare()" id="cmp-btn">Score &amp; improve ↗</button>
-
-    <div id="cmp-output-wrap" style="display:none;margin-top:22px;">
+    <button class="btn btn-primary" onclick="runPrediction()" id="pred-btn">Predict virality window ↗</button>
+    <div id="pred-output-wrap" style="display:none;margin-top:18px;">
       <div class="output-wrap">
         <div class="output-header">
-          <div class="output-header-left">📊 Analysis</div>
+          <div class="output-header-left">⏱ Virality prediction</div>
+          <div class="output-actions">
+            <button class="btn btn-sm btn-ghost" onclick="copyEl('pred-output')">Copy</button>
+          </div>
+        </div>
+        <div class="post-area" id="pred-output"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step B: Compare after -->
+  <div class="card">
+    <div class="section-title">Step 2 — Come back after 24–72 hours</div>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px;">Paste your actual stats and the original viral post you remixed. PostCraft will score your performance against the prediction and tell you exactly what to do differently next time.</p>
+    <div class="field">
+      <label for="cmp-original">Original viral post you remixed</label>
+      <textarea id="cmp-original" rows="5" placeholder="Paste the original viral post…"></textarea>
+    </div>
+    <div class="field">
+      <label for="cmp-remix">Your published post</label>
+      <textarea id="cmp-remix" rows="5" placeholder="Paste your published post…"></textarea>
+    </div>
+    <div class="field">
+      <label for="cmp-stats">Your actual stats</label>
+      <textarea id="cmp-stats" rows="3" placeholder="e.g. 48 hours in: 1,200 impressions, 34 likes, 8 comments, 3 reposts, 0 DMs. Reached 420 accounts outside my followers."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="runCompare()" id="cmp-btn">Analyse performance ↗</button>
+    <div id="cmp-output-wrap" style="display:none;margin-top:18px;">
+      <div class="output-wrap">
+        <div class="output-header">
+          <div class="output-header-left">📊 Performance analysis</div>
           <div class="output-actions">
             <button class="btn btn-sm btn-ghost" onclick="copyEl('cmp-output')">Copy</button>
           </div>
@@ -374,7 +414,8 @@ hr{border:none;border-top:1px solid var(--border);margin:22px 0;}
       </div>
     </div>
   </div>
-
+</div>
+  
   <!-- ════ PROFILE PANEL ════ -->
   <div id="panel-profile" class="panel">
     <div class="ptitle">Your profile</div>
