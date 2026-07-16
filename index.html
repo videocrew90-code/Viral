@@ -625,6 +625,7 @@ const GEMINI_MODELS = [
   'gemini-2.0-flash'
 ];
 
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 async function callGeminiWithFallback(body) {
   const key = getKey(); if(!key) throw new Error('No key');
   let lastError = null;
@@ -772,6 +773,7 @@ async function runCreate() {
 
     state.fingerprint = await gemini(fingerprintPrompt);
     document.getElementById('out-fingerprint').textContent = state.fingerprint;
+    await sleep(4000);
 
     // ── Step 2: Virality tips (web search) ──
     setStatus('Fetching live virality tips for your niche…');
@@ -789,6 +791,7 @@ async function runCreate() {
       ).join('');
     } catch {
       document.getElementById('out-tips').innerHTML = `<div class="tip-chip"><span class="tip-chip-dot">→</span><div>${esc(tipsRaw)}</div></div>`;
+      await sleep(4000);
     }
 
     // ── Step 3: Generate main post ──
@@ -809,6 +812,7 @@ Output ONLY the finished post. No preamble, no labels, no quotation marks.`;
 
     state.currentPost = await gemini(postPrompt);
     document.getElementById('out-post').textContent = state.currentPost;
+    await sleep(4000);
 
     // Seed chat history
     state.chatHistory = [
