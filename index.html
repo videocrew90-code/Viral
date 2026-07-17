@@ -318,6 +318,17 @@ hr{border:none;border-top:1px solid var(--border);margin:22px 0;}
           <div class="fingerprint-label">Pattern analysis</div>
           <div class="fingerprint-text" id="out-fingerprint"></div>
         </div>
+        <div class="card" id="virality-wrap" style="display:none;">
+  <h3>🎯 Predicted Virality</h3>
+  <div style="display:flex;align-items:center;gap:16px;margin:12px 0;">
+    <div id="virality-score" style="font-size:36px;font-weight:800;color:var(--green);">—</div>
+    <div>
+      <div id="virality-label" style="font-weight:600;"></div>
+      <div id="virality-impressions" style="color:var(--muted);font-size:13px;"></div>
+    </div>
+  </div>
+  <div id="virality-reasoning" style="color:var(--muted);font-size:13px;line-height:1.5;"></div>
+</div>
 
         <!-- Tips -->
         <div class="tips-row" id="out-tips-wrap">
@@ -815,6 +826,37 @@ async function runCreate() {
 
     state.fingerprint = await gemini(fingerprintPrompt);
     document.getElementById('out-fingerprint').textContent = state.fingerprint;
+    await sleep(8000);
+    // ── Step 1b: Predict virality ──
+    setStatus('Predicting virality potential…');
+    const viralityRaw = await gemini(
+      `Based on this content and viral pattern analysis, predict its virality potential for ${platName}.
+
+Content:
+"""
+${src}
+"""
+
+Pattern analysis: ${state.fingerprint}
+${profileBlock}
+
+Consider: hook strength, platform fit, emotional pull, timing/trend relevance, and how closely it matches proven viral patterns for ${platName}.
+
+Return ONLY valid JSON, no markdown:
+{"score": <number 0-100>, "label": "<one of: Low, Moderate, Good, High, Very High>", "impressions_low": <number>, "impressions_high": <number>, "reasoning": "<1-2 sentences, plain, no hype>"}`
+    );
+
+    try {
+      const virality = JSON.parse(viralityRaw.replace(/```json|```/g,'').trim());
+      document.getElementById('virality-score').textContent = virality.score + '%';
+      document.getElementById('virality-label').textContent = virality.label + ' virality potential';
+      document.getElementById('virality-impressions').textContent =
+        `Est. ${virality.impressions_low.toLocaleString()}–${virality.impressions_high.toLocaleString()} impressions`;
+      document.getElementById('virality-reasoning').textContent = virality.reasoning;
+      document.getElementById('virality-wrap').style.display = 'block';
+    } catch {
+      document.getElementById('virality-wrap').style.display = 'none';
+    }
     await sleep(8000);
 
     // ── Step 2: Virality tips (web search) ──
