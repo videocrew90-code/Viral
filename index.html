@@ -855,7 +855,8 @@ Return ONLY valid JSON, no markdown:
         `Est. ${virality.impressions_low.toLocaleString()}–${virality.impressions_high.toLocaleString()} impressions`;
       document.getElementById('virality-reasoning').textContent = virality.reasoning;
       document.getElementById('virality-wrap').style.display = 'block';
-    } catch {
+    } catch (err) {
+      console.error('Virality parse failed:', err, '\nRaw response was:', viralityRaw);
       document.getElementById('virality-wrap').style.display = 'none';
     }
     await sleep(8000);
