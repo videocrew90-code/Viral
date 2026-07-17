@@ -646,46 +646,58 @@ const GROQ_SEARCH_MODELS = [
 ];
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-async function callGeminiWithFallback(body, models) {
+async function callGeminiWithFallback(body, models, fallbackModels = null) {
   const key = getKey(); if(!key) throw new Error('No key');
-  console.log('KEY LENGTH:', key.length, 'KEY PREVIEW:', key.slice(0,15) + '...' + key.slice(-10));
-  console.log('PAYLOAD SIZE:', new Blob([JSON.stringify(body)]).size, 'bytes');
-  console.log('FULL BODY:', JSON.stringify(body));
   let lastError = null;
   for (const model of models) {
-    await sleep(2000);
-    try {
-      const res = await fetch(
-        'https://api.groq.com/openai/v1/chat/completions',
-        {
-          method:'POST',
-          headers:{
-            'Content-Type':'application/json',
-            'Authorization':`Bearer ${key}`
-          },
-          body:JSON.stringify({ ...body, model })
+    const isCompound = model.includes('compound');
+    const maxRetries = isCompound ? 2 : 1;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      await sleep(attempt === 1 ? 2000 : attempt * 8000);
+      try {
+        const res = await fetch(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json',
+              'Authorization':`Bearer ${key}`
+            },
+            body:JSON.stringify({ ...body, model })
+          }
+        );
+        const data = await res.json();
+        if (data.error) {
+          const msg = data.error.message || '';
+          const isRetryable = /quota|rate limit|exceeded|429|413|too large|not found|unavailable|decommissioned/i.test(msg);
+          if (isRetryable) {
+            lastError = new Error(msg);
+            console.log(`Model ${model} attempt ${attempt} failed: ${msg}. Retrying...`);
+            continue;
+          }
+          throw new Error(msg);
         }
-      );
-      const data = await res.json();
-      if (data.error) {
-        const msg = data.error.message || '';
-       const isQuotaOrModelIssue = /quota|rate limit|exceeded|429|413|too large|not found|unavailable|decommissioned/i.test(msg);
-        if (isQuotaOrModelIssue) { lastError = new Error(msg); continue; }
-        throw new Error(msg);
+        return data;
+      } catch (err) {
+        lastError = err;
+        continue;
       }
-      return data;
-    } catch (err) {
-      lastError = err;
-      continue;
     }
   }
+
+  if (fallbackModels && fallbackModels.length) {
+    console.log('Live search models unavailable, falling back to knowledge-based response...');
+    return callGeminiWithFallback(body, fallbackModels, null);
+  }
+
   throw new Error('All Groq models are unavailable or over quota. Last error: ' + (lastError?.message || 'unknown'));
 }
-
 async function gemini(prompt, useSearch=false) {
   const body = { messages:[{role:'user', content:prompt}] };
   const models = useSearch ? GROQ_SEARCH_MODELS : GROQ_MODELS;
-  const data = await callGeminiWithFallback(body, models);
+  const fallback = useSearch ? GROQ_MODELS : null;
+  const data = await callGeminiWithFallback(body, models, fallback);
   return data?.choices?.[0]?.message?.content?.trim() || '';
 }
 
