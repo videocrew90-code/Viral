@@ -809,6 +809,7 @@ async function runCreate() {
   const voice = voiceSample();
   const intent = document.getElementById('src-intent').value.trim();
   const plat = state.platform;
+  const platName = {linkedin:'LinkedIn',x:'X/Twitter',tiktok:'TikTok',youtube:'YouTube',general:'social media'}[plat]||'social media';
   const isIdea = state.sourceTab==='idea';
 
   const profileBlock = profile ? `\nCREATOR CONTEXT:\n${profile}` : '';
@@ -864,7 +865,6 @@ Return ONLY valid JSON, no markdown:
     setStatus('Fetching live virality tips for your niche…');
     const p = S.get('profile') || {};
     const field = p['p-field'] || 'content creation';
-    const platName = {linkedin:'LinkedIn',x:'X/Twitter',tiktok:'TikTok',youtube:'YouTube',general:'social media'}[plat]||'social media';
     const tipsRaw = await gemini(
       `Search for the latest proven tactics for ${platName} posts in ${field} (2024–2025). Return 4 specific, actionable tips based on real data and patterns. No fluff.\n\nReturn ONLY a JSON array, no markdown:\n[{"tip":"...","why":"..."}]`,
       true
