@@ -648,6 +648,7 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 async function callGeminiWithFallback(body, models) {
   const key = getKey(); if(!key) throw new Error('No key');
+  console.log('KEY LENGTH:', key.length, 'KEY PREVIEW:', key.slice(0,15) + '...' + key.slice(-10));
   console.log('PAYLOAD SIZE:', new Blob([JSON.stringify(body)]).size, 'bytes');
   let lastError = null;
   for (const model of models) {
